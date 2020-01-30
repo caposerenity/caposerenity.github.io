@@ -1,7 +1,7 @@
 # Site settings
 title: Serenity
 SEOTitle: Serenity's Blog
-header-img: img/post-bg-desk.jpg
+header-img: img/home-img.jpeg
 email: 181250072@smail.nju.edu.cn
 description: "且把阴阳仔细烹"
 keyword: "a try for Blog, Serenity, 李俊杰, DeepLearning, Java, Web"
@@ -11,8 +11,8 @@ github_repo: "https://github.com/caposerenity/caposerenity.github.io.git" # you 
 
 # Sidebar settings
 sidebar: true                           # whether or not using Sidebar.
-sidebar-about-description: "Goals determine what you going to be!"
-sidebar-avatar: /img/tag-bg-o.jpg     # use absolute URL, seeing it's used in both `/` and `/about/`
+sidebar-about-description: "Don't Stop!"
+sidebar-avatar: /img/buou-img.jpg     # use absolute URL, seeing it's used in both `/` and `/about/`
 
 
 
