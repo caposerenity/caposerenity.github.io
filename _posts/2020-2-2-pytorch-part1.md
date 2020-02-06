@@ -164,3 +164,115 @@ print(x.grad)
 
 *一个预测房价的线性回归例子*  
 
+线性回归模型房屋价格预测的表达式为: 
+$$
+\hat{y}^{(i)} = x_1^{(i)} w_1 + x_2^{(i)} w_2 + b
+$$
+损失函数为:
+$$
+\ell(w_1, w_2, b) =\frac{1}{n} \sum_{i=1}^n \ell^{(i)}(w_1, w_2, b) =\frac{1}{n} \sum_{i=1}^n \frac{1}{2}\left(x_1^{(i)} w_1 + x_2^{(i)} w_2 + b - y^{(i)}\right)^2
+$$
+采用的优化算法为小批量随机梯度下降:
+$$
+\begin{aligned}
+w_1 &\leftarrow w_1 -   \frac{\eta}{|\mathcal{B}|} \sum_{i \in \mathcal{B}} \frac{ \partial \ell^{(i)}(w_1, w_2, b)  }{\partial w_1} = w_1 -   \frac{\eta}{|\mathcal{B}|} \sum_{i \in \mathcal{B}}x_1^{(i)} \left(x_1^{(i)} w_1 + x_2^{(i)} w_2 + b - y^{(i)}\right),\\
+w_2 &\leftarrow w_2 -   \frac{\eta}{|\mathcal{B}|} \sum_{i \in \mathcal{B}} \frac{ \partial \ell^{(i)}(w_1, w_2, b)  }{\partial w_2} = w_2 -   \frac{\eta}{|\mathcal{B}|} \sum_{i \in \mathcal{B}}x_2^{(i)} \left(x_1^{(i)} w_1 + x_2^{(i)} w_2 + b - y^{(i)}\right),\\
+b &\leftarrow b -   \frac{\eta}{|\mathcal{B}|} \sum_{i \in \mathcal{B}} \frac{ \partial \ell^{(i)}(w_1, w_2, b)  }{\partial b} = b -   \frac{\eta}{|\mathcal{B}|} \sum_{i \in \mathcal{B}}\left(x_1^{(i)} w_1 + x_2^{(i)} w_2 + b - y^{(i)}\right).
+\end{aligned}
+$$
+下面给出pytorch版本的代码实现  
+
+```python
+#生成数据集
+num_inputs = 2
+num_examples = 1000
+true_w = [2, -3.4]
+true_b = 4.2
+features = torch.tensor(np.random.normal(0, 1, (num_examples, num_inputs)), dtype=torch.float)
+labels = true_w[0] * features[:, 0] + true_w[1] * features[:, 1] + true_b
+labels += torch.tensor(np.random.normal(0, 0.01, size=labels.size()), dtype=torch.float)
+
+#读取数据
+import torch.utils.data as Data
+batch_size = 10
+dataset = Data.TensorDataset(features, labels)	# 将训练数据的特征和标签组合
+data_iter = Data.DataLoader(dataset, batch_size, shuffle=True)	# 随机读取小批量
+
+#定义模型
+# 写法一
+net = nn.Sequential(
+    nn.Linear(num_inputs, 1)
+    # 此处还可以传入其他层
+    )
+# 写法二
+net = nn.Sequential()
+net.add_module('linear', nn.Linear(num_inputs, 1))
+# net.add_module ......
+# 写法三
+from collections import OrderedDict
+net = nn.Sequential(OrderedDict([
+          ('linear', nn.Linear(num_inputs, 1))
+          # ......
+        ]))
+
+print(net)
+print(net[0])
+
+#初始化模型参数
+from torch.nn import init
+init.normal_(net[0].weight, mean=0, std=0.01)
+init.constant_(net[0].bias, val=0)  # 也可以直接修改bias的data: net[0].bias.data.fill_(0)
+
+#定义损失函数
+loss = nn.MSELoss()
+
+#定义优化算法
+import torch.optim as optim
+optimizer = optim.SGD(net.parameters(), lr=0.03)
+print(optimizer)
+
+#训练模型
+num_epochs = 3
+for epoch in range(1, num_epochs + 1):
+    for X, y in data_iter:
+        output = net(X)
+        l = loss(output, y.view(-1, 1))
+        optimizer.zero_grad() # 梯度清零，等价于net.zero_grad()
+        l.backward()
+        optimizer.step()
+    print('epoch %d, loss: %f' % (epoch, l.item()))
+
+#输出结果
+dense = net[0]
+print(true_w, dense.weight)
+print(true_b, dense.bias)
+```
+
+
+
+### *一个softmax图像分类的例子*  
+
+softmax回归与线性回归一样将输入特征和权重做线性叠加。  
+
+*损失函数*采用**交叉熵**，即: 
+
+对于样本$i$，我们构造向量$ \boldsymbol{y}^{(i)}\in \mathbb{R}^{q} $ ，使其第$y^{(i)}$（样本$i$类别的离散数值）个元素为1，其余为0。交叉熵的公式如下:
+$$
+H\left(\boldsymbol y^{(i)}, \boldsymbol {\hat y}^{(i)}\right ) = -\sum_{j=1}^q y_j^{(i)} \log \hat y_j^{(i)},
+$$
+
+其中带下标的$y_j^{(i)}$是向量$\boldsymbol y^{(i)}$中非0即1的元素，需要注意将它与样本$i$类别的离散数值，即不带下标的$y^{(i)}$区分。在上式中，我们知道向量$ \boldsymbol y^{(i)}$中只有第$y^{(i)} $个元素$y^{(i)}_{y^{(i)}}$为1，其余全为0，于是  
+
+$$H(\boldsymbol y^{(i)}, \boldsymbol {\hat y}^{(i)}) = -\log \hat y_{y^{(i)}}^{(i)}$$
+
+
+假设训练数据集的样本数为$n$，交叉熵损失函数定义为
+$$\ell(\boldsymbol{\Theta}) = \frac{1}{n} \sum_{i=1}^n H\left(\boldsymbol y^{(i)}, \boldsymbol {\hat y}^{(i)}\right ),$$
+
+其中$\boldsymbol{\Theta}$代表模型参数。同样地，如果每个样本只有一个标签，那么交叉熵损失可以简写成$\ell(\boldsymbol{\Theta}) = -(1/n)  \sum_{i=1}^n \log \hat y_{y^{(i)}}^{(i)}$。从另一个角度来看，我们知道最小化$\ell(\boldsymbol{\Theta})$等价于最大化$\exp(-n\ell(\boldsymbol{\Theta}))=\prod_{i=1}^n \hat y_{y^{(i)}}^{(i)}$，即最小化交叉熵损失函数等价于最大化训练数据集所有标签类别的联合预测概率。
+
+
+
+
+
+
