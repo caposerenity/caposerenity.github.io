@@ -1,6 +1,6 @@
 ---
 layout:     post                    # 使用的布局（不需要改）
-title:      springboot中遇到的一些坑               # 标题 
+title:      springboot中踩的雷               # 标题 
 subtitle:    #副标题
 date:       2020-05-19              # 时间
 author:     serenity                      # 作者
