@@ -252,16 +252,68 @@ print(true_b, dense.bias)
 
 ### *一个softmax图像分类的例子*  
 
-softmax回归与线性回归一样将输入特征和权重做线性叠加。  
+softmax回归与线性回归一样将输入特征和权重做线性叠加。softmax回归的输出是多个，而非一个。softmax回归的输出值个数等于标签里的类别数。  
 
-*损失函数*采用**交叉熵**，即: 
+以一个2*2像素，表示三种动物的图片集为例，因为有4个特征，3个输出，所以权重包含12个标量带下标的$w$）、偏差包含3个标量（带下标的$b$）
+$$
+\begin{aligned}
+o_1 &= x_1 w_{11} + x_2 w_{21} + x_3 w_{31} + x_4 w_{41} + b_1,\\
+o_2 &= x_1 w_{12} + x_2 w_{22} + x_3 w_{32} + x_4 w_{42} + b_2,\\
+o_3 &= x_1 w_{13} + x_2 w_{23} + x_3 w_{33} + x_4 w_{43} + b_3.
+\end{aligned}
+$$
+softmax运算将输出值变换成正数且和为1的概率分布。
+$$
+\hat{y}_1, \hat{y}_2, \hat{y}_3 = \text{softmax}(o_1, o_2, o_3)
+$$
+
+其中exp是以e为底的指数函数$e^x$
+
+$$
+\hat{y}_1 = \frac{ \exp(o_1)}{\sum_{i=1}^3 \exp(o_i)},\quad
+\hat{y}_2 = \frac{ \exp(o_2)}{\sum_{i=1}^3 \exp(o_i)},\quad
+\hat{y}_3 = \frac{ \exp(o_3)}{\sum_{i=1}^3 \exp(o_i)}.
+$$
+
+
+***单个样本的矢量计算表达式***  
+$$
+\begin{aligned}
+\boldsymbol{o}^{(i)} &= \boldsymbol{x}^{(i)} \boldsymbol{W} + \boldsymbol{b},\\
+\boldsymbol{\hat{y}}^{(i)} &= \text{softmax}(\boldsymbol{o}^{(i)}).
+\end{aligned}
+$$
+其中
+$$
+\boldsymbol{W} = 
+\begin{bmatrix}
+    w_{11} & w_{12} & w_{13} \\
+    w_{21} & w_{22} & w_{23} \\
+    w_{31} & w_{32} & w_{33} \\
+    w_{41} & w_{42} & w_{43}
+\end{bmatrix},\quad
+\boldsymbol{b} = 
+\begin{bmatrix}
+    b_1 & b_2 & b_3
+\end{bmatrix},
+$$
+
+$$
+\boldsymbol{x}^{(i)} = \begin{bmatrix}x_1^{(i)} & x_2^{(i)} & x_3^{(i)} & x_4^{(i)}\end{bmatrix},\boldsymbol{o}^{(i)} = \begin{bmatrix}o_1^{(i)} & o_2^{(i)} & o_3^{(i)}\end{bmatrix}
+$$
+
+对于多个样本（比如n个样本），可以增加$x^{(i)}$的行数，使之成为n\*4的矩阵。这样最后的输出结果会改变为一个n\*3的矩阵
+
+
+
+**损失函数**采用**交叉熵**，即: 
 
 对于样本$i$，我们构造向量$ \boldsymbol{y}^{(i)}\in \mathbb{R}^{q} $ ，使其第$y^{(i)}$（样本$i$类别的离散数值）个元素为1，其余为0。交叉熵的公式如下:
 $$
 H\left(\boldsymbol y^{(i)}, \boldsymbol {\hat y}^{(i)}\right ) = -\sum_{j=1}^q y_j^{(i)} \log \hat y_j^{(i)},
 $$
 
-其中带下标的$y_j^{(i)}$是向量$\boldsymbol y^{(i)}$中非0即1的元素，需要注意将它与样本$i$类别的离散数值，即不带下标的$y^{(i)}$区分。在上式中，我们知道向量$ \boldsymbol y^{(i)}$中只有第$y^{(i)} $个元素$y^{(i)}_{y^{(i)}}$为1，其余全为0，于是  
+其中带下标的$y_j^{(i)}$是向量$\boldsymbol y^{(i)}$中非0即1的元素，需要注意将它与样本$i$类别的离散数值，即不带下标的$y^{(i)}$区分。在上式中，我们知道向量$ \boldsymbol y^{(i)}$中只有第$y^{(i)} $个元素$y^{(i)}_{y^{(i)}}$为1，其余全为0,于是  
 
 $$H(\boldsymbol y^{(i)}, \boldsymbol {\hat y}^{(i)}) = -\log \hat y_{y^{(i)}}^{(i)}$$
 
@@ -269,7 +321,17 @@ $$H(\boldsymbol y^{(i)}, \boldsymbol {\hat y}^{(i)}) = -\log \hat y_{y^{(i)}}^{(
 假设训练数据集的样本数为$n$，交叉熵损失函数定义为
 $$\ell(\boldsymbol{\Theta}) = \frac{1}{n} \sum_{i=1}^n H\left(\boldsymbol y^{(i)}, \boldsymbol {\hat y}^{(i)}\right ),$$
 
-其中$\boldsymbol{\Theta}$代表模型参数。同样地，如果每个样本只有一个标签，那么交叉熵损失可以简写成$\ell(\boldsymbol{\Theta}) = -(1/n)  \sum_{i=1}^n \log \hat y_{y^{(i)}}^{(i)}$。从另一个角度来看，我们知道最小化$\ell(\boldsymbol{\Theta})$等价于最大化$\exp(-n\ell(\boldsymbol{\Theta}))=\prod_{i=1}^n \hat y_{y^{(i)}}^{(i)}$，即最小化交叉熵损失函数等价于最大化训练数据集所有标签类别的联合预测概率。
+其中$\boldsymbol{\Theta}$代表模型参数。同样地，如果每个样本只有一个标签，那么交叉熵损失可以简写成$\ell(\boldsymbol{\Theta}) = -(1/n)  \sum_{i=1}^n \log \hat y_{y^{(i)}}^{(i)}$。从另一个角度来看，我们知道最小化$\ell(\boldsymbol{\Theta})$等价于最大化$\exp(-n\ell(\boldsymbol{\Theta}))=\prod_{i=1}^n \hat y_{y^{(i)}}^{(i)}$，即最小化交叉熵损失函数等价于最大化训练数据集所有标签类别的联合预测概率。  
+
+
+
+*pytorch实现softmax回归*  
+
+
+
+### *多层感知机*
+
+
 
 
 
