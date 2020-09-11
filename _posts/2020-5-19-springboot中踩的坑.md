@@ -7,15 +7,14 @@ author:     serenity                      # 作者
 header-img: img/post-bg-2015.jpg    #这篇文章标题背景图片
 catalog: true                       # 是否归档
 tags:                               #标签
-	- Java
-	- Springboot
+    - 生活
 ---
 
 ### 本帖子用于记录springboot使用中踩的雷
 
 #### springboot接受string并自动转化枚举类型
 
-background: controller层接收了一个前端传来的对象类型（user），对象类型里包含一一个枚举类（usertype），
+background: controller层接收了一个前端传来的对象类型（user），对象类型里包含一一个枚举类（usertype）
 
 ```java
 //controller层
