@@ -9,6 +9,7 @@ catalog: true                       # 是否归档
 tags:                               #标签
     - JAVA
 	- springboot
+
 ---
 
 ### 本帖子用于记录springboot使用中踩的雷
